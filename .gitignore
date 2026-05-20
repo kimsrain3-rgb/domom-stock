@@ -1,0 +1,13 @@
+# 민감 정보
+config.local.js
+.env
+secrets.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 에디터
+.vscode/
+.idea/
+*.swp

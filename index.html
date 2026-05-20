@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#4A6741">
+  <title>두맘코튼 재고관리</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── 로딩 화면 ──────────────────────────────────────── -->
+<div id="loading-screen">
+  <p class="logo-text">DO.MOM Cotton</p>
+  <div class="spinner"></div>
+</div>
+
+<!-- ── 로그인 화면 ─────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>DO.MOM Cotton</h1>
+      <p>두맘코튼 재고관리</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-id">아이디</label>
+        <input type="text" id="login-id" autocomplete="username" autocapitalize="off" required>
+      </div>
+      <div class="form-group">
+        <label for="login-pw">비밀번호</label>
+        <input type="password" id="login-pw" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">로그인</button>
+      <p class="error-msg" id="login-error"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ── 메인 앱 ────────────────────────────────────────── -->
+<div id="app" class="hidden">
+
+  <!-- 헤더 -->
+  <header class="app-header">
+    <h1>DO.MOM Cotton</h1>
+    <div class="header-info" id="header-name"></div>
+    <button class="btn-logout" id="btn-logout">로그아웃</button>
+  </header>
+
+  <!-- 탭 바 -->
+  <nav class="tab-bar">
+    <button class="tab-btn" data-tab="dashboard">재고현황</button>
+    <button class="tab-btn" data-tab="record">입출고</button>
+    <button class="tab-btn" data-tab="history">기록</button>
+    <button class="tab-btn hidden" data-tab="chat" id="tab-chat">채팅</button>
+    <button class="tab-btn hidden" data-tab="settings" id="tab-settings">설정</button>
+  </nav>
+
+  <!-- 컨텐츠 영역 -->
+  <main class="tab-content">
+
+    <!-- ── 재고현황 탭 ──────────────────────────────── -->
+    <div class="tab-pane" id="tab-dashboard">
+      <div class="dashboard-summary">
+        <div class="summary-card ok">
+          <div class="count" id="dash-ok">-</div>
+          <div class="label">✅ 정상</div>
+        </div>
+        <div class="summary-card warn">
+          <div class="count" id="dash-warn">-</div>
+          <div class="label">⚠️ 부족</div>
+        </div>
+        <div class="summary-card out">
+          <div class="count" id="dash-out">-</div>
+          <div class="label">🔴 품절</div>
+        </div>
+      </div>
+      <div class="stock-grid" id="stock-grid"></div>
+    </div>
+
+    <!-- ── 입출고 탭 ────────────────────────────────── -->
+    <div class="tab-pane" id="tab-record">
+
+      <!-- 단계 표시 -->
+      <div class="step-indicator">
+        <div class="step-dot active" id="step-dot-1">1</div>
+        <div class="step-line"></div>
+        <div class="step-dot" id="step-dot-2">2</div>
+      </div>
+
+      <!-- 단계 1: 색상 선택 -->
+      <div id="step1-content">
+        <div class="step-title">색상을 선택하세요</div>
+        <div class="color-grid" id="color-grid"></div>
+        <br>
+        <button class="btn-next" id="btn-to-step2">다음 →</button>
+      </div>
+
+      <!-- 단계 2: 수량 + 입출고 선택 -->
+      <div id="step2-content" class="hidden">
+        <button class="btn-back" id="btn-back-to-step1">← 색상 다시 선택</button>
+
+        <div class="selected-color-info">
+          <div class="color-swatch" id="selected-swatch"></div>
+          <div>
+            <strong id="selected-name"></strong>
+            <div id="selected-stock" style="font-size:13px;color:#666;margin-top:2px"></div>
+          </div>
+        </div>
+
+        <div class="step-title">입고 / 출고</div>
+        <div class="type-toggle">
+          <button class="type-btn active" data-type="출고">출고</button>
+          <button class="type-btn" data-type="입고">입고</button>
+        </div>
+
+        <div class="step-title">수량 선택</div>
+        <div class="qty-presets">
+          <button class="qty-preset-btn" data-qty="1">1볼</button>
+          <button class="qty-preset-btn" data-qty="5">5볼</button>
+          <button class="qty-preset-btn" data-qty="10">10볼</button>
+          <button class="qty-preset-btn" data-qty="30">30볼</button>
+        </div>
+        <div class="qty-input-row">
+          <label for="qty-input">직접 입력</label>
+          <input type="number" id="qty-input" class="qty-input" min="1" max="999" placeholder="0">
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+          <label for="record-memo">메모 (선택)</label>
+          <input type="text" id="record-memo" placeholder="거래처, 사유 등">
+        </div>
+
+        <button class="btn-next" id="btn-confirm-open">확인 →</button>
+      </div>
+
+    </div><!-- /tab-record -->
+
+    <!-- ── 기록 탭 ────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-history">
+      <div class="date-filter">
+        <input type="date" id="history-date">
+        <button class="btn-today" id="btn-today">오늘</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <p style="color:#999;text-align:center;padding:20px">날짜를 선택하세요.</p>
+      </div>
+    </div>
+
+    <!-- ── 채팅 탭 (관리자) ──────────────────────────── -->
+    <div class="tab-pane" id="tab-chat">
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-bubble system-msg">안녕하세요 꼼지파파! 재고 관련 무엇이든 말씀해주세요.</div>
+        </div>
+        <form class="chat-input-row" id="chat-form">
+          <input type="text" class="chat-input" id="chat-input"
+            placeholder="예: 핑크 3볼 출고, 재고 부족한 색상은?">
+          <button type="submit" class="btn-send">↑</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── 설정 탭 (관리자) ──────────────────────────── -->
+    <div class="tab-pane" id="tab-settings">
+
+      <div class="settings-section">
+        <h3>서버 주소 설정</h3>
+        <form id="form-gas-url">
+          <input type="text" id="input-gas-url" placeholder="Google Apps Script 배포 URL">
+          <button type="submit" class="btn-save">저장</button>
+        </form>
+      </div>
+
+      <div class="settings-section">
+        <h3>Claude API 키 설정</h3>
+        <form id="form-api-key">
+          <input type="password" id="input-api-key" placeholder="sk-ant-...">
+          <button type="submit" class="btn-save">저장</button>
+        </form>
+        <p style="font-size:12px;color:#999;margin-top:8px">
+          API 키는 서버에 안전하게 저장됩니다. 화면에는 저장되지 않아요.
+        </p>
+      </div>
+
+      <div class="settings-section">
+        <h3>직원 계정 추가</h3>
+        <form id="form-add-user">
+          <input type="text" id="new-user-id"   placeholder="아이디">
+          <input type="text" id="new-user-pw"   placeholder="초기 비밀번호">
+          <input type="text" id="new-user-name" placeholder="이름">
+          <select id="new-user-role">
+            <option value="staff">직원</option>
+            <option value="admin">관리자</option>
+          </select>
+          <button type="submit" class="btn-save">계정 추가</button>
+        </form>
+      </div>
+
+    </div><!-- /tab-settings -->
+
+  </main>
+</div><!-- /app -->
+
+<!-- ── 확인 모달 ──────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-confirm">
+  <div class="modal-sheet">
+    <div class="modal-title">확인해주세요</div>
+    <div class="modal-body" id="confirm-text"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="btn-modal-cancel">취소</button>
+      <button class="btn-confirm" id="btn-modal-confirm">확정!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 토스트 알림 ─────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
