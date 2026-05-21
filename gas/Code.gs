@@ -106,10 +106,11 @@ function getStock() {
     .getSheetByName(SHEET_STOCK)
     .getDataRange().getValues();
   const result = [];
-  for (let i = 1; i < rows.length; i++) {
-    if (!rows[i][0]) continue;
+  for (let i = 0; i < rows.length; i++) {
+    const num = rows[i][0];
+    if (typeof num !== 'number' || num < 1 || num > 23) continue;
     result.push({
-      no: rows[i][0], nameEn: rows[i][1], nameKo: rows[i][2],
+      no: String(num).padStart(2, '0'), nameEn: rows[i][1], nameKo: rows[i][2],
       stock: rows[i][3], safeStock: rows[i][4],
       totalIn: rows[i][5], totalOut: rows[i][6], status: rows[i][7]
     });
@@ -130,22 +131,17 @@ function addRecord(data) {
     const histSheet   = ss.getSheetByName(SHEET_HISTORY);
     const stockSheet  = ss.getSheetByName(SHEET_STOCK);
 
-    const props  = PropertiesService.getScriptProperties();
-    const seq    = parseInt(props.getProperty('historySeq') || '0') + 1;
-    props.setProperty('historySeq', seq.toString());
-    const histId = 'H' + seq.toString().padStart(6, '0');
-
-    const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss');
+    const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
     histSheet.appendRow([
-      histId, now,
-      data.colorNo, data.colorName,
-      data.type, data.quantity,
+      now,
+      parseInt(data.colorNo), data.colorName,
+      data.type, parseInt(data.quantity),
       data.memo || '', data.userId
     ]);
 
     updateStock(stockSheet, data.colorNo, data.type, parseInt(data.quantity));
     SpreadsheetApp.flush();
-    return { success: true, historyId: histId };
+    return { success: true };
   } finally {
     lock.releaseLock();
   }
@@ -153,8 +149,9 @@ function addRecord(data) {
 
 function updateStock(sheet, colorNo, type, quantity) {
   const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] !== colorNo) continue;
+  const targetNo = parseInt(colorNo);
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][0] !== targetNo) continue;
     const safe      = rows[i][4];
     const current   = rows[i][3];
     const totalIn   = rows[i][5];
@@ -178,15 +175,16 @@ function getHistory(date) {
     .getSheetByName(SHEET_HISTORY)
     .getDataRange().getValues();
   const result = [];
-  for (let i = 1; i < rows.length; i++) {
-    if (!rows[i][0]) continue;
-    const rowDate = rows[i][1].toString().substring(0, 10);
+  for (let i = 0; i < rows.length; i++) {
+    if (!(rows[i][0] instanceof Date)) continue;
+    const rowDate = Utilities.formatDate(rows[i][0], 'Asia/Seoul', 'yyyy-MM-dd');
     if (!date || rowDate === date) {
       result.push({
-        id: rows[i][0], date: rows[i][1],
-        colorNo: rows[i][2], colorName: rows[i][3],
-        type: rows[i][4], quantity: rows[i][5],
-        memo: rows[i][6], userId: rows[i][7]
+        date: rowDate,
+        colorNo: String(rows[i][1]).padStart(2, '0'),
+        colorName: rows[i][2],
+        type: rows[i][3], quantity: rows[i][4],
+        memo: rows[i][5], userId: rows[i][6]
       });
     }
   }
