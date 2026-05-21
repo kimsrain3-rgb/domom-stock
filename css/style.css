@@ -477,11 +477,15 @@ input  { font-family: inherit; }
 
 /* ── 반응형 ───────────────────────────────────────────────── */
 @media (min-width: 480px) {
-  .color-grid { grid-template-columns: repeat(5, 1fr); }
-  .stock-grid { grid-template-columns: repeat(5, 1fr); }
+  .color-grid { grid-template-columns: repeat(5, 1fr) !important; }
+  .stock-grid { grid-template-columns: repeat(5, 1fr) !important; }
 }
 @media (min-width: 768px) {
-  .color-grid { grid-template-columns: repeat(6, 1fr); }
-  .stock-grid { grid-template-columns: repeat(6, 1fr); }
-  .tab-content { max-width: 700px; margin: 0 auto; padding: 16px; }
+  .color-grid { grid-template-columns: repeat(6, 1fr) !important; }
+  .stock-grid { grid-template-columns: repeat(6, 1fr) !important; }
+  .tab-content { max-width: 960px; margin: 0 auto; padding: 16px; }
+}
+@media (min-width: 1200px) {
+  .stock-grid { grid-template-columns: repeat(8, 1fr) !important; }
+  .tab-content { max-width: 1100px; }
 }
