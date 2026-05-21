@@ -112,6 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupChat();
   setupSettings();
 
+  // 저장된 아이디 자동 채우기
+  const lastId = localStorage.getItem('domom_last_id');
+  if (lastId) $('login-id').value = lastId;
+
   // 저장된 세션 있으면 자동 로그인
   if (state.gasUrl && restoreSession()) {
     showApp();
@@ -165,6 +169,7 @@ function setupLoginForm() {
       state.role   = data.role;
       state.name   = data.name;
       state.userId = id;
+      localStorage.setItem('domom_last_id', id);
       saveSession();
 
       showApp();
