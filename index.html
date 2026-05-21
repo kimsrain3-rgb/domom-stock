@@ -80,60 +80,52 @@
 
     <!-- ── 입출고 탭 ────────────────────────────────── -->
     <div class="tab-pane" id="tab-record">
+      <div class="record-split">
 
-      <!-- 단계 표시 -->
-      <div class="step-indicator">
-        <div class="step-dot active" id="step-dot-1">1</div>
-        <div class="step-line"></div>
-        <div class="step-dot" id="step-dot-2">2</div>
-      </div>
+        <!-- 왼쪽: 색상 선택 -->
+        <div class="record-left">
+          <div class="step-title">색상을 선택하세요</div>
+          <div class="color-grid" id="color-grid"></div>
+        </div>
 
-      <!-- 단계 1: 색상 선택 -->
-      <div id="step1-content">
-        <div class="step-title">색상을 선택하세요</div>
-        <div class="color-grid" id="color-grid"></div>
-        <br>
-        <button class="btn-next" id="btn-to-step2">다음 →</button>
-      </div>
+        <!-- 오른쪽: 입력 패널 (색상 선택 시 표시) -->
+        <div class="record-right hidden" id="record-panel">
 
-      <!-- 단계 2: 수량 + 입출고 선택 -->
-      <div id="step2-content" class="hidden">
-        <button class="btn-back" id="btn-back-to-step1">← 색상 다시 선택</button>
-
-        <div class="selected-color-info">
-          <div class="color-swatch" id="selected-swatch"></div>
-          <div>
-            <strong id="selected-name"></strong>
-            <div id="selected-stock" style="font-size:13px;color:#666;margin-top:2px"></div>
+          <div class="selected-color-info">
+            <div class="color-swatch" id="selected-swatch"></div>
+            <div>
+              <strong id="selected-name"></strong>
+              <div id="selected-stock" style="font-size:13px;color:#666;margin-top:2px"></div>
+            </div>
           </div>
+
+          <div class="step-title">입고 / 출고</div>
+          <div class="type-toggle">
+            <button class="type-btn active" data-type="출고">출고</button>
+            <button class="type-btn" data-type="입고">입고</button>
+          </div>
+
+          <div class="step-title">수량 선택</div>
+          <div class="qty-presets">
+            <button class="qty-preset-btn" data-qty="1">1볼</button>
+            <button class="qty-preset-btn" data-qty="5">5볼</button>
+            <button class="qty-preset-btn" data-qty="10">10볼</button>
+            <button class="qty-preset-btn" data-qty="30">30볼</button>
+          </div>
+          <div class="qty-input-row">
+            <label for="qty-input">직접 입력</label>
+            <input type="number" id="qty-input" class="qty-input" min="1" max="999" placeholder="0">
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px">
+            <label for="record-memo">메모 (선택)</label>
+            <input type="text" id="record-memo" placeholder="거래처, 사유 등">
+          </div>
+
+          <button class="btn-next" id="btn-confirm-open">확인 →</button>
         </div>
 
-        <div class="step-title">입고 / 출고</div>
-        <div class="type-toggle">
-          <button class="type-btn active" data-type="출고">출고</button>
-          <button class="type-btn" data-type="입고">입고</button>
-        </div>
-
-        <div class="step-title">수량 선택</div>
-        <div class="qty-presets">
-          <button class="qty-preset-btn" data-qty="1">1볼</button>
-          <button class="qty-preset-btn" data-qty="5">5볼</button>
-          <button class="qty-preset-btn" data-qty="10">10볼</button>
-          <button class="qty-preset-btn" data-qty="30">30볼</button>
-        </div>
-        <div class="qty-input-row">
-          <label for="qty-input">직접 입력</label>
-          <input type="number" id="qty-input" class="qty-input" min="1" max="999" placeholder="0">
-        </div>
-
-        <div class="form-group" style="margin-bottom:20px">
-          <label for="record-memo">메모 (선택)</label>
-          <input type="text" id="record-memo" placeholder="거래처, 사유 등">
-        </div>
-
-        <button class="btn-next" id="btn-confirm-open">확인 →</button>
       </div>
-
     </div><!-- /tab-record -->
 
     <!-- ── 기록 탭 ────────────────────────────────────── -->

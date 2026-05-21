@@ -326,13 +326,6 @@ function setupRecordWorkflow() {
     state.selectedQty = parseInt($('qty-input').value) || 0;
   });
 
-  $('btn-to-step2').addEventListener('click', () => {
-    if (!state.selectedColor) { showToast('색상을 선택해주세요', 'error'); return; }
-    showStep(2);
-  });
-
-  $('btn-back-to-step1').addEventListener('click', () => showStep(1));
-
   $('btn-confirm-open').addEventListener('click', () => {
     const qty = parseInt($('qty-input').value) || 0;
     if (qty <= 0) { showToast('수량을 입력해주세요', 'error'); return; }
@@ -353,32 +346,18 @@ function selectColor(c) {
   state.selectedColor = c;
   document.querySelectorAll('.color-btn').forEach(b =>
     b.classList.toggle('selected', b.dataset.no === c.no));
-}
 
-function showStep(step) {
-  state.step = step;
-
-  document.querySelectorAll('.step-dot').forEach((dot, i) => {
-    dot.classList.remove('active', 'done');
-    if (i + 1 < step) dot.classList.add('done');
-    else if (i + 1 === step) dot.classList.add('active');
-  });
-
-  $('step1-content').classList.toggle('hidden', step !== 1);
-  $('step2-content').classList.toggle('hidden', step !== 2);
-
-  if (step === 2 && state.selectedColor) {
-    const c = state.selectedColor;
-    setSwatchBackground($('selected-swatch'), c);
-    $('selected-name').textContent = `${c.no} ${c.nameKo}`;
-    const s = getStock(c.no);
-    $('selected-stock').textContent = `현재 재고: ${s.stock}볼`;
-    $('qty-input').value = '';
-    state.selectedQty = 0;
-    document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.type-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.type === state.selectedType));
-  }
+  // 오른쪽 패널 표시 + 정보 채우기
+  $('record-panel').classList.remove('hidden');
+  setSwatchBackground($('selected-swatch'), c);
+  $('selected-name').textContent = `${c.no} ${c.nameKo}`;
+  const s = getStock(c.no);
+  $('selected-stock').textContent = `현재 재고: ${s.stock}볼`;
+  $('qty-input').value = '';
+  state.selectedQty = 0;
+  document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.type-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.type === state.selectedType));
 }
 
 function resetRecordWorkflow() {
@@ -388,7 +367,7 @@ function resetRecordWorkflow() {
   document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.type-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.type === '출고'));
-  showStep(1);
+  $('record-panel').classList.add('hidden');
 }
 
 async function submitRecord() {

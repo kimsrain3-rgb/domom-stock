@@ -212,19 +212,30 @@ input  { font-family: inherit; }
 }
 
 /* ── 입출고 탭 ────────────────────────────────────────────── */
-.step-indicator {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 20px;
+.record-split {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
 }
-.step-dot {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--brand-border); color: var(--text-mid);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
+.record-left {
+  flex: 1;
+  min-width: 0;
 }
-.step-dot.active { background: var(--brand-green); color: #fff; }
-.step-dot.done   { background: #A8C5A0; color: #fff; }
-.step-line { flex: 1; height: 2px; background: var(--brand-border); }
+.record-right {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 110px;
+}
+/* 모바일: 세로 배치 */
+@media (max-width: 767px) {
+  .record-split { flex-direction: column; }
+  .record-right { width: 100%; position: static; }
+}
 
 .step-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--brand-green); }
 
