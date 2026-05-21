@@ -32,6 +32,21 @@ const COLORS = [
   { no:'23', nameEn:'MINT',            nameKo:'민트',        hex:'#A0E7E5', textColor:'#2D2D2D' },
 ];
 
+// ── 실 사진 배경 설정 함수 ─────────────────────────────────────
+function setSwatchBackground(el, color) {
+  const imgUrl = `assets/swatches/color-${color.no}.jpg`;
+  el.style.background = color.hex;              // 폴백 색상
+  el.style.color = color.textColor;
+  // 이미지 존재 시 배경으로 교체
+  const img = new Image();
+  img.onload = () => {
+    el.style.backgroundImage = `url(${imgUrl})`;
+    el.style.backgroundSize  = 'cover';
+    el.style.backgroundPosition = 'center';
+  };
+  img.src = imgUrl;
+}
+
 // ── 앱 상태 ──────────────────────────────────────────────────
 const state = {
   token:    null,
@@ -200,8 +215,7 @@ function renderDashboard() {
     const badge = s.status === '품절' ? '🔴' : s.status === '부족' ? '⚠️' : '';
     const card = document.createElement('div');
     card.className = 'stock-card';
-    card.style.background  = c.hex;
-    card.style.color       = c.textColor;
+    setSwatchBackground(card, c);
     card.innerHTML = `
       <div>
         <div class="color-name">${c.nameKo}</div>
@@ -225,8 +239,7 @@ function renderColorGrid() {
     const btn = document.createElement('button');
     btn.className = 'color-btn';
     btn.dataset.no = c.no;
-    btn.style.background = c.hex;
-    btn.style.color = c.textColor;
+    setSwatchBackground(btn, c);
     btn.innerHTML = `
       <span class="btn-no">${c.no}</span>
       <span class="btn-name">${c.nameKo}</span>
@@ -318,7 +331,7 @@ function showStep(step) {
 
   if (step === 2 && state.selectedColor) {
     const c = state.selectedColor;
-    $('selected-swatch').style.background = c.hex;
+    setSwatchBackground($('selected-swatch'), c);
     $('selected-name').textContent = `${c.no} ${c.nameKo}`;
     const s = getStock(c.no);
     $('selected-stock').textContent = `현재 재고: ${s.stock}볼`;
@@ -393,8 +406,9 @@ async function loadHistory() {
       const item = document.createElement('div');
       item.className = 'history-item';
       const meta = [h.userId, h.memo].filter(Boolean).join(' · ');
+      const swatchImg = `assets/swatches/color-${h.colorNo}.jpg`;
       item.innerHTML = `
-        <div class="history-swatch" style="background:${c.hex}"></div>
+        <div class="history-swatch" style="background:${c.hex};background-image:url(${swatchImg});background-size:cover;background-position:center"></div>
         <div class="history-info">
           <div class="h-color">${h.colorNo} ${h.colorName}</div>
           <div class="h-meta">${h.date.toString().substring(0,16).replace('T',' ')} ${meta ? '· ' + meta : ''}</div>
