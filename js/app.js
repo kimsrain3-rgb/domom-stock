@@ -72,7 +72,10 @@ async function apiGet(params) {
   url.searchParams.set('token', state.token);
   const res = await fetch(url.toString());
   const data = await res.json();
-  if (data.error) throw new Error(data.error);
+  if (data.error) {
+    if (data.error.includes('만료') || data.error.includes('토큰')) { clearSession(); logout(); }
+    throw new Error(data.error);
+  }
   return data;
 }
 
@@ -81,7 +84,10 @@ async function apiPost(body) {
   url.searchParams.set('data', JSON.stringify({ ...body, token: state.token }));
   const res = await fetch(url.toString());
   const data = await res.json();
-  if (data.error) throw new Error(data.error);
+  if (data.error) {
+    if (data.error.includes('만료') || data.error.includes('토큰')) { clearSession(); logout(); }
+    throw new Error(data.error);
+  }
   return data;
 }
 
@@ -105,7 +111,38 @@ document.addEventListener('DOMContentLoaded', () => {
   setupHistory();
   setupChat();
   setupSettings();
+
+  // 저장된 세션 있으면 자동 로그인
+  if (state.gasUrl && restoreSession()) {
+    showApp();
+  }
 });
+
+// ── 세션 저장/복원 ──────────────────────────────────────────────
+function saveSession() {
+  sessionStorage.setItem('domom_session', JSON.stringify({
+    token: state.token, role: state.role,
+    name: state.name, userId: state.userId
+  }));
+}
+
+function restoreSession() {
+  const raw = sessionStorage.getItem('domom_session');
+  if (!raw) return false;
+  try {
+    const s = JSON.parse(raw);
+    if (!s.token) return false;
+    state.token  = s.token;
+    state.role   = s.role;
+    state.name   = s.name;
+    state.userId = s.userId;
+    return true;
+  } catch { return false; }
+}
+
+function clearSession() {
+  sessionStorage.removeItem('domom_session');
+}
 
 // ── 로그인 ───────────────────────────────────────────────────
 function setupLoginForm() {
@@ -128,6 +165,7 @@ function setupLoginForm() {
       state.role   = data.role;
       state.name   = data.name;
       state.userId = id;
+      saveSession();
 
       showApp();
     } catch (err) {
@@ -175,7 +213,7 @@ function showTab(tabId) {
 
 function logout() {
   state.token = state.role = state.name = state.userId = null;
-  sessionStorage.clear();
+  clearSession();
   $('app').classList.add('hidden');
   $('login-screen').classList.remove('hidden');
   $('login-pw').value = '';
