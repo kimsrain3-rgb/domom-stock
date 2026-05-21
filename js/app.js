@@ -197,7 +197,11 @@ function logout() {
   clearSession();
   $('app').classList.add('hidden');
   $('login-screen').classList.remove('hidden');
-  $('login-pw').value = '';
+  // 저장된 아이디/비번 다시 채우기
+  const lastId = localStorage.getItem('domom_last_id');
+  const lastPw = localStorage.getItem('domom_last_pw');
+  $('login-id').value = lastId || '';
+  $('login-pw').value = lastPw || '';
   $('tab-chat').classList.add('hidden');
   $('tab-settings').classList.add('hidden');
 }
