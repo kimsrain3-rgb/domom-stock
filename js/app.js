@@ -357,18 +357,43 @@ function resetRecordWorkflow() {
   $('record-panel').classList.add('hidden');
 }
 
-// ── 입출고 등록 (Supabase RPC) ──────────────────────────────
+// ── 입출고 등록 (즉시 반응 + Supabase RPC) ──────────────────
 async function submitRecord() {
   $('modal-confirm').classList.add('hidden');
   $('btn-modal-confirm').disabled = true;
 
+  const colorNo = state.selectedColor.no;
+  const qty     = state.selectedQty;
+  const type    = state.selectedType;
+
+  // ★ 즉시 화면 업데이트 (서버 응답 기다리지 않음)
+  const stockItem = state.stockData.find(s => s.no === colorNo);
+  if (stockItem) {
+    stockItem.stock += (type === '입고' ? qty : -qty);
+    if (type === '입고') stockItem.totalIn += qty;
+    else stockItem.totalOut += qty;
+    stockItem.status = stockItem.stock <= 0 ? '품절' : stockItem.stock < stockItem.safeStock ? '부족' : '정상';
+  }
+  renderDashboard();
+  syncStockToColorGrid();
+  $('selected-stock').textContent = `현재 재고: ${stockItem ? stockItem.stock : '?'}볼`;
+  showToast(`✅ ${state.selectedColor.nameKo} ${qty}볼 ${type} 완료!`, 'success');
+
+  // 입력란 초기화
+  $('qty-input').value = '';
+  state.selectedQty = 0;
+  $('record-memo').value = '';
+  document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
+  $('btn-modal-confirm').disabled = false;
+
+  // ★ 서버 저장은 뒤에서 진행
   try {
-    const { data, error } = await sb.rpc('add_record', {
+    const { error } = await sb.rpc('add_record', {
       p_token:      state.token,
-      p_color_no:   parseInt(state.selectedColor.no),
+      p_color_no:   parseInt(colorNo),
       p_color_name: state.selectedColor.nameKo,
-      p_type:       state.selectedType,
-      p_quantity:   state.selectedQty,
+      p_type:       type,
+      p_quantity:   qty,
       p_memo:       $('record-memo').value.trim(),
       p_user_id:    state.userId,
       p_date:       $('record-date').value,
@@ -377,23 +402,13 @@ async function submitRecord() {
       if (error.message.includes('만료') || error.message.includes('세션')) {
         clearSession(); logout();
       }
-      throw new Error(error.message);
-    }
-    showToast(`✅ ${state.selectedColor.nameKo} ${state.selectedQty}볼 ${state.selectedType} 완료!`, 'success');
-    await loadStock();
-    // 입출고 화면 유지, 수량만 초기화
-    $('qty-input').value = '';
-    state.selectedQty = 0;
-    $('record-memo').value = '';
-    document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
-    if (state.selectedColor) {
-      const s = getStock(state.selectedColor.no);
-      $('selected-stock').textContent = `현재 재고: ${s.stock}볼`;
+      // 서버 실패 시 되돌리기
+      await loadStock();
+      showToast('⚠️ 서버 저장 실패: ' + error.message, 'error');
     }
   } catch (e) {
-    showToast('처리 실패: ' + e.message, 'error');
-  } finally {
-    $('btn-modal-confirm').disabled = false;
+    await loadStock();
+    showToast('⚠️ 서버 저장 실패: ' + e.message, 'error');
   }
 }
 
