@@ -79,7 +79,7 @@ function login(id, pw) {
     CacheService.getScriptCache().put(
       'token_' + token,
       JSON.stringify({ id: id, role: rows[i][4], name: rows[i][3] }),
-      900 // 15분
+      3600 // 1시간
     );
     return { token, role: rows[i][4], name: rows[i][3] };
   }
@@ -142,9 +142,9 @@ function addRecord(data) {
     const histSheet   = ss.getSheetByName(SHEET_HISTORY);
     const stockSheet  = ss.getSheetByName(SHEET_STOCK);
 
-    const now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
+    const recordDate = data.date || Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
     histSheet.appendRow([
-      now,
+      recordDate,
       parseInt(data.colorNo), data.colorName,
       data.type, parseInt(data.quantity),
       data.memo || '', data.userId

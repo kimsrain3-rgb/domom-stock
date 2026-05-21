@@ -354,6 +354,7 @@ function selectColor(c) {
 
   // 오른쪽 패널 표시 + 정보 채우기
   $('record-panel').classList.remove('hidden');
+  $('record-date').value = new Date().toISOString().slice(0, 10);
   setSwatchBackground($('selected-swatch'), c);
   $('selected-name').textContent = `${c.no} ${c.nameKo}`;
   const s = getStock(c.no);
@@ -382,6 +383,7 @@ async function submitRecord() {
   try {
     await apiPost({
       action:    'record',
+      date:      $('record-date').value,
       colorNo:   state.selectedColor.no,
       colorName: state.selectedColor.nameKo,
       type:      state.selectedType,
