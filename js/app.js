@@ -393,8 +393,16 @@ async function submitRecord() {
     });
     showToast(`✅ ${state.selectedColor.nameKo} ${state.selectedQty}볼 ${state.selectedType} 완료!`, 'success');
     await loadStock();
-    resetRecordWorkflow();
-    showTab('dashboard');
+    // 입출고 화면 유지, 수량만 초기화
+    $('qty-input').value = '';
+    state.selectedQty = 0;
+    $('record-memo').value = '';
+    document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
+    // 선택된 색상 재고 업데이트 표시
+    if (state.selectedColor) {
+      const s = getStock(state.selectedColor.no);
+      $('selected-stock').textContent = `현재 재고: ${s.stock}볼`;
+    }
   } catch (e) {
     showToast('처리 실패: ' + e.message, 'error');
   } finally {
