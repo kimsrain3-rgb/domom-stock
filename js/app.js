@@ -62,10 +62,9 @@ async function apiGet(params) {
 }
 
 async function apiPost(body) {
-  const res = await fetch(state.gasUrl, {
-    method: 'POST',
-    body: JSON.stringify({ ...body, token: state.token }),
-  });
+  const url = new URL(state.gasUrl);
+  url.searchParams.set('data', JSON.stringify({ ...body, token: state.token }));
+  const res = await fetch(url.toString());
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   return data;
@@ -104,10 +103,9 @@ function setupLoginForm() {
     $('login-btn').textContent = '로그인 중...';
 
     try {
-      const res = await fetch(state.gasUrl, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'login', id, pw }),
-      });
+      const loginUrl = new URL(state.gasUrl);
+      loginUrl.searchParams.set('data', JSON.stringify({ action: 'login', id, pw }));
+      const res = await fetch(loginUrl.toString());
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 

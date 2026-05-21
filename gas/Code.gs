@@ -7,11 +7,22 @@ const SHEET_HISTORY = '입출고기록';
 const SHEET_ORDER   = '발주관리';
 const SHEET_USERS   = '사용자';
 
-// ── GET 라우터 ──────────────────────────────────────────────
+// ── GET 라우터 (모든 요청을 GET으로 처리 - CORS 안전) ──────
 function doGet(e) {
-  const action = e.parameter.action;
-  const token  = e.parameter.token;
   try {
+    // data 파라미터가 있으면 POST 대신 GET으로 온 요청
+    if (e.parameter.data) {
+      const data = JSON.parse(e.parameter.data);
+      const action = data.action;
+      if (action === 'login')     return jsonResponse(login(data.id, data.pw));
+      if (action === 'record')    { verifyToken(data.token); return jsonResponse(addRecord(data)); }
+      if (action === 'chat')      { verifyToken(data.token); return jsonResponse(handleChat(data.message, data.userId)); }
+      if (action === 'setApiKey') { verifyAdminToken(data.token); setApiKey(data.apiKey); return jsonResponse({ success: true }); }
+      if (action === 'addUser')   { verifyAdminToken(data.token); return jsonResponse(createUser(data.userId, data.pw, data.name, data.role)); }
+    }
+
+    const action = e.parameter.action;
+    const token  = e.parameter.token;
     if (action === 'stock') {
       verifyToken(token);
       return jsonResponse(getStock());
@@ -30,7 +41,7 @@ function doGet(e) {
   }
 }
 
-// ── POST 라우터 ─────────────────────────────────────────────
+// ── POST 라우터 (폴백용) ────────────────────────────────────
 function doPost(e) {
   let data;
   try {
