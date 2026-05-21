@@ -190,6 +190,14 @@ input  { font-family: inherit; }
   background-position: center;
   overflow: hidden;
 }
+.stock-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.25);
+  border-radius: 6px;
+  z-index: 0;
+}
+.stock-card > * { position: relative; z-index: 1; }
 .stock-card .color-name {
   font-size: 10px; font-weight: 700;
   text-shadow: 0 1px 3px rgba(0,0,0,.4);
@@ -264,6 +272,16 @@ input  { font-family: inherit; }
   transition: transform .1s, box-shadow .1s;
   border: 2px solid transparent;
   background-size: cover;
+  position: relative; overflow: hidden;
+}
+.color-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.25);
+  border-radius: 8px;
+  z-index: 0;
+}
+.color-btn > * { position: relative; z-index: 1; }
   background-position: center;
 }
 .color-btn:active { transform: scale(.95); }
