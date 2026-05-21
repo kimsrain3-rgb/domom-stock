@@ -1,8 +1,13 @@
 /* ============================================================
-   두맘코튼 재고관리 웹앱 - 프론트엔드 로직
+   두맘코튼 재고관리 웹앱 - 프론트엔드 로직 (Supabase 버전)
    ============================================================ */
 
-// ── 설정 ────────────────────────────────────────────────────
+// ── Supabase 설정 ──────────────────────────────────────────
+const SUPABASE_URL = 'https://enfxhsautrsmvokumcmx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_lUY2T2L_WGDMIP76iIG2ow_E8Kpq9v3';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// 채팅 프록시용 GAS URL (관리자 선택 설정)
 const GAS_URL_KEY = 'domom_gas_url';
 
 // 23색 컬러 데이터
@@ -35,9 +40,8 @@ const COLORS = [
 // ── 실 사진 배경 설정 함수 ─────────────────────────────────────
 function setSwatchBackground(el, color) {
   const imgUrl = `assets/swatches/color-${color.no}.jpg`;
-  el.style.background = color.hex;              // 폴백 색상
+  el.style.background = color.hex;
   el.style.color = color.textColor;
-  // 이미지 존재 시 배경으로 교체
   const img = new Image();
   img.onload = () => {
     el.style.backgroundImage = `url(${imgUrl})`;
@@ -55,8 +59,6 @@ const state = {
   userId:   null,
   gasUrl:   localStorage.getItem(GAS_URL_KEY) || '',
   stockData: [],
-  // 입출고 워크플로우
-  step: 1,
   selectedColor: null,
   selectedType:  '출고',
   selectedQty:   0,
@@ -65,44 +67,9 @@ const state = {
 // ── DOM 레퍼런스 ─────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-// ── API 호출 ─────────────────────────────────────────────────
-async function apiGet(params) {
-  const url = new URL(state.gasUrl);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  url.searchParams.set('token', state.token);
-  const res = await fetch(url.toString());
-  const data = await res.json();
-  if (data.error) {
-    if (data.error.includes('만료') || data.error.includes('토큰')) { clearSession(); logout(); }
-    throw new Error(data.error);
-  }
-  return data;
-}
-
-async function apiPost(body) {
-  const url = new URL(state.gasUrl);
-  url.searchParams.set('data', JSON.stringify({ ...body, token: state.token }));
-  const res = await fetch(url.toString());
-  const data = await res.json();
-  if (data.error) {
-    if (data.error.includes('만료') || data.error.includes('토큰')) { clearSession(); logout(); }
-    throw new Error(data.error);
-  }
-  return data;
-}
-
 // ── 초기화 ───────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   $('loading-screen').classList.add('hidden');
-
-  // GAS URL 미설정 시 로그인 전 입력 요청
-  if (!state.gasUrl) {
-    const url = prompt('앱 서버 주소(GAS URL)를 입력해주세요.\n(꼼지파파에게 문의)');
-    if (url) {
-      state.gasUrl = url.trim();
-      localStorage.setItem(GAS_URL_KEY, state.gasUrl);
-    }
-  }
 
   renderColorGrid();
   setupLoginForm();
@@ -116,9 +83,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const lastId = localStorage.getItem('domom_last_id');
   if (lastId) $('login-id').value = lastId;
 
-  // 저장된 세션 있으면 자동 로그인
-  if (state.gasUrl && restoreSession()) {
-    showApp();
+  // 저장된 세션 있으면 자동 로그인 (Supabase 토큰 검증)
+  if (restoreSession()) {
+    try {
+      const { data, error } = await sb.rpc('verify_token', { p_token: state.token });
+      if (error || !data || data.error) {
+        clearSession();
+      } else {
+        showApp();
+        return;
+      }
+    } catch {
+      clearSession();
+    }
   }
 });
 
@@ -148,7 +125,7 @@ function clearSession() {
   sessionStorage.removeItem('domom_session');
 }
 
-// ── 로그인 ───────────────────────────────────────────────────
+// ── 로그인 (Supabase RPC) ───────────────────────────────────
 function setupLoginForm() {
   $('login-form').addEventListener('submit', async e => {
     e.preventDefault();
@@ -159,11 +136,9 @@ function setupLoginForm() {
     $('login-btn').textContent = '로그인 중...';
 
     try {
-      const loginUrl = new URL(state.gasUrl);
-      loginUrl.searchParams.set('data', JSON.stringify({ action: 'login', id, pw }));
-      const res = await fetch(loginUrl.toString());
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const { data, error } = await sb.rpc('do_login', { p_id: id, p_pw: pw });
+      if (error) throw new Error(error.message);
+      if (!data || data.error) throw new Error(data?.error || '로그인 실패');
 
       state.token  = data.token;
       state.role   = data.role;
@@ -171,7 +146,6 @@ function setupLoginForm() {
       state.userId = id;
       localStorage.setItem('domom_last_id', id);
       saveSession();
-
       showApp();
     } catch (err) {
       $('login-error').textContent = err.message;
@@ -187,7 +161,6 @@ function showApp() {
   $('app').classList.remove('hidden');
   $('header-name').textContent = `${state.name} (${state.role === 'admin' ? '관리자' : '직원'})`;
 
-  // 관리자만 채팅/설정 탭 표시
   if (state.role === 'admin') {
     $('tab-chat').classList.remove('hidden');
     $('tab-settings').classList.remove('hidden');
@@ -226,10 +199,21 @@ function logout() {
   $('tab-settings').classList.add('hidden');
 }
 
-// ── 재고 로드 ────────────────────────────────────────────────
+// ── 재고 로드 (Supabase 직접 조회) ──────────────────────────
 async function loadStock() {
   try {
-    state.stockData = await apiGet({ action: 'stock' });
+    const { data, error } = await sb.from('stock').select('*').order('no');
+    if (error) throw new Error(error.message);
+    state.stockData = data.map(s => ({
+      no:        String(s.no).padStart(2, '0'),
+      nameEn:    s.name_en,
+      nameKo:    s.name_ko,
+      stock:     s.stock,
+      safeStock: s.safe_stock,
+      totalIn:   s.total_in,
+      totalOut:  s.total_out,
+      status:    s.status,
+    }));
     renderDashboard();
     syncStockToColorGrid();
   } catch (e) {
@@ -307,7 +291,6 @@ function syncStockToColorGrid() {
 }
 
 function setupRecordWorkflow() {
-  // 타입 토글
   document.querySelectorAll('.type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
@@ -316,7 +299,6 @@ function setupRecordWorkflow() {
     });
   });
 
-  // 수량 프리셋
   document.querySelectorAll('.qty-preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
@@ -352,7 +334,6 @@ function selectColor(c) {
   document.querySelectorAll('.color-btn').forEach(b =>
     b.classList.toggle('selected', b.dataset.no === c.no));
 
-  // 오른쪽 패널 표시 + 정보 채우기
   $('record-panel').classList.remove('hidden');
   $('record-date').value = new Date().toISOString().slice(0, 10);
   setSwatchBackground($('selected-swatch'), c);
@@ -376,21 +357,28 @@ function resetRecordWorkflow() {
   $('record-panel').classList.add('hidden');
 }
 
+// ── 입출고 등록 (Supabase RPC) ──────────────────────────────
 async function submitRecord() {
   $('modal-confirm').classList.add('hidden');
   $('btn-modal-confirm').disabled = true;
 
   try {
-    await apiPost({
-      action:    'record',
-      date:      $('record-date').value,
-      colorNo:   state.selectedColor.no,
-      colorName: state.selectedColor.nameKo,
-      type:      state.selectedType,
-      quantity:  state.selectedQty,
-      memo:      $('record-memo').value.trim(),
-      userId:    state.userId,
+    const { data, error } = await sb.rpc('add_record', {
+      p_token:      state.token,
+      p_color_no:   parseInt(state.selectedColor.no),
+      p_color_name: state.selectedColor.nameKo,
+      p_type:       state.selectedType,
+      p_quantity:   state.selectedQty,
+      p_memo:       $('record-memo').value.trim(),
+      p_user_id:    state.userId,
+      p_date:       $('record-date').value,
     });
+    if (error) {
+      if (error.message.includes('만료') || error.message.includes('세션')) {
+        clearSession(); logout();
+      }
+      throw new Error(error.message);
+    }
     showToast(`✅ ${state.selectedColor.nameKo} ${state.selectedQty}볼 ${state.selectedType} 완료!`, 'success');
     await loadStock();
     // 입출고 화면 유지, 수량만 초기화
@@ -398,7 +386,6 @@ async function submitRecord() {
     state.selectedQty = 0;
     $('record-memo').value = '';
     document.querySelectorAll('.qty-preset-btn').forEach(b => b.classList.remove('active'));
-    // 선택된 색상 재고 업데이트 표시
     if (state.selectedColor) {
       const s = getStock(state.selectedColor.no);
       $('selected-stock').textContent = `현재 재고: ${s.stock}볼`;
@@ -410,7 +397,7 @@ async function submitRecord() {
   }
 }
 
-// ── 기록 조회 ────────────────────────────────────────────────
+// ── 기록 조회 (Supabase 직접 조회) ──────────────────────────
 function setupHistory() {
   const today = new Date().toISOString().slice(0, 10);
   $('history-date').value = today;
@@ -427,23 +414,29 @@ async function loadHistory() {
   const list = $('history-list');
   list.innerHTML = '<p style="color:#999;text-align:center;padding:20px">로딩 중...</p>';
   try {
-    const data = await apiGet({ action: 'history', date });
+    const { data, error } = await sb
+      .from('history')
+      .select('*')
+      .eq('date', date)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
     if (!data.length) {
       list.innerHTML = '<p style="color:#999;text-align:center;padding:20px">기록이 없습니다.</p>';
       return;
     }
     list.innerHTML = '';
     data.forEach(h => {
-      const c   = COLORS.find(x => x.no === h.colorNo) || { hex: '#ccc', textColor: '#333' };
+      const colorNo = String(h.color_no).padStart(2, '0');
+      const c = COLORS.find(x => x.no === colorNo) || { hex: '#ccc', textColor: '#333' };
       const item = document.createElement('div');
       item.className = 'history-item';
-      const meta = [h.userId, h.memo].filter(Boolean).join(' · ');
-      const swatchImg = `assets/swatches/color-${h.colorNo}.jpg`;
+      const meta = [h.user_id, h.memo].filter(Boolean).join(' · ');
+      const swatchImg = `assets/swatches/color-${colorNo}.jpg`;
       item.innerHTML = `
         <div class="history-swatch" style="background:${c.hex};background-image:url(${swatchImg});background-size:cover;background-position:center"></div>
         <div class="history-info">
-          <div class="h-color">${h.colorNo} ${h.colorName}</div>
-          <div class="h-meta">${h.date.toString().substring(0,16).replace('T',' ')} ${meta ? '· ' + meta : ''}</div>
+          <div class="h-color">${colorNo} ${h.color_name}</div>
+          <div class="h-meta">${h.date} ${meta ? '· ' + meta : ''}</div>
         </div>
         <span class="history-type-badge ${h.type === '입고' ? 'in' : 'out'}">${h.type}</span>
         <span class="history-qty">${h.quantity}볼</span>
@@ -455,21 +448,34 @@ async function loadHistory() {
   }
 }
 
-// ── 채팅 (관리자) ────────────────────────────────────────────
+// ── 채팅 (관리자 - GAS 프록시 경유) ─────────────────────────
 function setupChat() {
   $('chat-form').addEventListener('submit', async e => {
     e.preventDefault();
     const msg = $('chat-input').value.trim();
     if (!msg) return;
+
+    if (!state.gasUrl) {
+      appendChatBubble('system-msg', '⚠️ 채팅 서버가 설정되지 않았습니다.\n설정 탭에서 GAS URL을 입력해주세요.');
+      return;
+    }
+
     $('chat-input').value = '';
     appendChatBubble('user', msg);
     appendChatBubble('assistant', '...');
 
     const thinkingEl = document.querySelector('.chat-bubble.assistant:last-child');
     try {
-      const res = await apiPost({ action: 'chat', message: msg, userId: state.userId });
-      thinkingEl.textContent = res.reply;
-      if (res.toolResult?.success) {
+      const url = new URL(state.gasUrl);
+      url.searchParams.set('data', JSON.stringify({
+        action: 'chat', message: msg, userId: state.userId, token: 'supabase'
+      }));
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      thinkingEl.textContent = data.reply;
+      if (data.toolResult?.success) {
         await loadStock();
         appendChatBubble('system-msg', '재고가 업데이트되었습니다.');
       }
@@ -491,26 +497,39 @@ function appendChatBubble(type, text) {
 
 // ── 설정 (관리자) ────────────────────────────────────────────
 function setupSettings() {
+  // GAS URL (채팅용)
   $('form-gas-url').addEventListener('submit', e => {
     e.preventDefault();
     const url = $('input-gas-url').value.trim();
     if (!url) return;
     state.gasUrl = url;
     localStorage.setItem(GAS_URL_KEY, url);
-    showToast('서버 주소 저장 완료', 'success');
+    showToast('채팅 서버 주소 저장 완료', 'success');
   });
 
+  // API 키 (GAS 경유)
   $('form-api-key').addEventListener('submit', async e => {
     e.preventDefault();
     const key = $('input-api-key').value.trim();
     if (!key) return;
+    if (!state.gasUrl) {
+      showToast('먼저 채팅 서버 주소(GAS URL)를 설정해주세요', 'error');
+      return;
+    }
     try {
-      await apiPost({ action: 'setApiKey', apiKey: key });
+      const url = new URL(state.gasUrl);
+      url.searchParams.set('data', JSON.stringify({
+        action: 'setApiKey', apiKey: key, token: 'supabase'
+      }));
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
       $('input-api-key').value = '';
       showToast('API 키 저장 완료', 'success');
     } catch (err) { showToast(err.message, 'error'); }
   });
 
+  // 계정 추가 (Supabase RPC)
   $('form-add-user').addEventListener('submit', async e => {
     e.preventDefault();
     const userId = $('new-user-id').value.trim();
@@ -519,13 +538,19 @@ function setupSettings() {
     const role   = $('new-user-role').value;
     if (!userId || !pw || !name) { showToast('모든 항목을 입력해주세요', 'error'); return; }
     try {
-      await apiPost({ action: 'addUser', userId, pw, name, role });
+      const { data, error } = await sb.rpc('create_user', {
+        p_token:   state.token,
+        p_user_id: userId,
+        p_pw:      pw,
+        p_name:    name,
+        p_role:    role,
+      });
+      if (error) throw new Error(error.message);
       $('new-user-id').value = $('new-user-pw').value = $('new-user-name').value = '';
       showToast(`${name} 계정 생성 완료`, 'success');
     } catch (err) { showToast(err.message, 'error'); }
   });
 
-  // 현재 GAS URL 채워두기
   if (state.gasUrl) $('input-gas-url').value = state.gasUrl;
 }
 
