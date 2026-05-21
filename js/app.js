@@ -79,9 +79,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupChat();
   setupSettings();
 
-  // 저장된 아이디 자동 채우기
+  // 저장된 아이디/비밀번호 자동 채우기
   const lastId = localStorage.getItem('domom_last_id');
   if (lastId) $('login-id').value = lastId;
+  const lastPw = localStorage.getItem('domom_last_pw');
+  if (lastPw) $('login-pw').value = lastPw;
 
   // 저장된 세션 있으면 자동 로그인 (Supabase 토큰 검증)
   if (restoreSession()) {
@@ -145,6 +147,7 @@ function setupLoginForm() {
       state.name   = data.name;
       state.userId = id;
       localStorage.setItem('domom_last_id', id);
+      localStorage.setItem('domom_last_pw', pw);
       saveSession();
       showApp();
     } catch (err) {
