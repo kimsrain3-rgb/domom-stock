@@ -64,7 +64,6 @@ async function apiGet(params) {
 async function apiPost(body) {
   const res = await fetch(state.gasUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...body, token: state.token }),
   });
   const data = await res.json();
@@ -107,7 +106,6 @@ function setupLoginForm() {
     try {
       const res = await fetch(state.gasUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', id, pw }),
       });
       const data = await res.json();
